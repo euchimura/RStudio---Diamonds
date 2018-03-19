@@ -1,0 +1,1075 @@
+---
+title: "Vinhos Tintos - Analise Exploratoria"
+author: "Eric Inohira Uchimura"
+date: "6 de fevereiro de 2018"
+output: html_document
+---
+
+
+## Análise Exploratória dos vinhos Tintos
+
+A análise deste estudo foi baseado na amostra do estudo realizado pelos autores  P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. no estudo entitulado: " Modeling wine preferences by data mining from physicochemical properties". Os dados foram extraidos pelo link disponibilizado pela Udacity (https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityReds.csv).
+
+A base de dados deste estudo utiliza dados das variantes do vinho portugues chamado "vinho verde"
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r cars}
+# importando as bibliotecas necessárias para este estudo
+
+library(ggplot2)
+library(gridExtra)
+library(GGally)
+library(RColorBrewer)
+library(mosaic)
+library (grid)
+library(corrplot)
+
+# Setando o diretório para o local onde o arquivo foi salvo
+
+setwd("C:/Users/eric.uchimura/OneDrive/Udacity/RStudio/Projeto - Vinho/")
+
+# carregando a base de dados
+
+baseVinho <- read.csv('wineQualityReds.csv')
+```
+## Análises Iniciais
+Verificaremos os nomes das colunas e as primeiras variaveis para ter um primeiro contato com os dados
+```{r}
+names(baseVinho)
+```
+```{r}
+head(baseVinho)
+```
+
+Esta base possui 12 variáveis (consideramos a primeira coluna "X" como um ID). 
+11 variáveis são baseadas nos tetes físico-quimicos - Acidez voláil, acidex fixa, acidez citrica, açucar, cloretos, dioxidos livres, total de dioxido, densidade, ph, sulfato, alcool.
+Apenas uma variavel (Qualidade) é baseado na sensação do avaliador que é uma nota que vai de zero a 10.
+
+## Análise individual das variaveis
+
+### Qualidade
+
+Ao verificar a frequencia das avaliações temos:
+```{r}
+table (baseVinho$quality)
+```
+```{r}
+summary(baseVinho$quality)
+```
+
+Para melhor visualiação nos graficos, classificamos a qualidade dos vinhos em 3 dimensões:
+* Sangue de boi: nota menor que 5
+* bom: nota entre 5 e 7
+* Excelente: acima de 7
+
+```{r}
+
+#Classificando os vinhos
+
+baseVinho$classificacao <- ifelse(baseVinho$quality<5,
+                                  'sangue de boi',
+                                  ifelse(baseVinho$quality <7,
+                                         'bom', 
+                                         'excelente'))
+baseVinho$classificacao <- ordered(baseVinho$classificacao, 
+                                   levels = c('sangue de boi',
+                                              'bom',
+                                              'excelente'))
+
+```
+
+Analisaremos cada variavel com o histograma de frequencia.
+
+```{r}
+# Plotagem do histograma da variavel qualidade
+qplot(baseVinho$quality, 
+      geom = "bar") +
+    xlab("Qualidade") + 
+    ggtitle("BarPlot da qualidade do vinho") +
+  scale_x_continuous(breaks=seq(3, 8, 1))
+   
+
+
+```
+
+
+Conclui-se que nao temos vinhos com ota abaixo de 3 e maiores que 8. Os extremos de vinhos ruins e extraordinários não existem nesta base.
+Verifica-se por meio do grafico uma concentração (maior que 600) de vinhos com nota 5 e 6.
+ 
+
+### Acidez Fixa (fixed acidity)
+```{r}
+# verificar a população nos quartis
+summary(baseVinho$fixed.acidity)
+```
+
+```{r}
+# grafico de histograma da acidez
+
+ggplot(baseVinho, aes(fixed.acidity)) +
+  geom_histogram(binwidth = 0.1) +
+  ggtitle('Histograma - Acidez Fixa')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Acidez Fixa') +
+  ylab('Frequencia') + 
+  scale_x_continuous(breaks=seq(0, 16, 1))
+
+# scale_x_continuous(breaks=c(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16))
+
+  
+  
+```
+
+Grande concentração dos dados com acidez fixa igual a 8 (mediana) com marcante presença de outliers acima de 14.
+
+
+### Acidez Volátil (volatile accidity)
+Corresponde a quantidadae de acido acético no vinho que em níveis altos levam o vinho a ter um gosto de vinagre
+
+```{r}
+# analise da populaçao nos quartis de acidez volatil
+summary(baseVinho$volatile.acidity)
+
+```
+
+```{r}
+
+# plota o histograma de acidez volátil
+ggplot(baseVinho, aes(volatile.acidity)) +
+  geom_histogram(binwidth = 0.01) +
+  ggtitle('Histograma - Acidez Volátil')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Acidez Volatil') +
+  ylab('Frequencia')+
+  scale_x_continuous(breaks=seq(0, 1.6, 0.1))
+```
+
+
+Distribuição bimodal em torno do valor 0.4 e 0,6. Outliers com valores acima de 1,2.
+
+
+
+
+### Acido Cítrico - Citric Acid 
+
+Encontrado em menor quantidade leva um sabor de frescor (freshness) ao vinho
+
+
+```{r}
+# verifica a população nos quartis do acido citrico
+summary(baseVinho$citric.acid)
+
+```
+```{r}
+#plota histograma do acido citrico
+ggplot(baseVinho, aes(citric.acid)) +
+  geom_histogram(binwidth = 0.01) +
+  ggtitle('Histograma - Acido Citrico')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Acido Citrico') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 1.0, 0.1))
+```
+
+
+Verifica-se que grande parte dos vinhos o valor oscila entre 0.00 a 0.75 (o 3o quartil está em 0.42). Graficamente verifica-se que o 1.0 é um caso isolado (outlier). Verificamos com fica o histograma, limitando ao quartil 0.99.
+
+```{r}
+#plota histograma do acido citrico limitando os quartis.
+ggplot(baseVinho, aes(citric.acid)) +
+  geom_histogram(binwidth = 0.01) +
+  xlim(-0.01, quantile(baseVinho$citric.acid, 0.99))+
+  ggtitle('Histograma - Acido Citrico')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Acido Citrico') +
+  ylab('Frequencia')+
+  scale_x_continuous(breaks=seq(0, 1.0, 0.1))
+
+```
+
+Grande quantidade de vinhos sem a presença de acido citrico. Erro de medição?
+
+
+
+
+
+### Açucar residual - Residual sugar
+Quantidade de açucar residual que é encontrado após a fermentação. Dificilmente encontra-se vinhos com menos de uma grama por litro e mais de 45 gramas por litro
+
+```{r}
+#população do acucar residual nos quartis
+summary(baseVinho$residual.sugar)
+```
+
+```{r}
+#plota histograma do açucar residual
+ggplot(baseVinho, aes(residual.sugar)) +
+  geom_histogram(binwidth = 0.1) +
+  ggtitle('Histograma - Açucar Residual')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Açucar Residual') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 16, 1))
+
+```
+
+
+Grande concentração com valores de 2.0.
+Verifica-se pelo grafico de histograma do açucar residual que valores acima de 6 ficam dispersos na frequencia. Vamos verificar utilizar a transformação log10.
+```{r}
+
+#plota histograma do açucar residual
+ggplot(baseVinho, aes(residual.sugar)) +
+  geom_histogram(binwidth = 0.05) +
+  scale_x_log10()+
+  ggtitle('Histograma - Açucar Residual')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Açucar Residual - log10') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 13, 1))
+
+```
+
+
+Com a transformação log10 a distribuição ficou na mesma. Concentração no nivel 2, com  outliers até o 16.
+
+### Cloreto - chlorides
+Quantidade de sal no vinho
+
+```{r}
+#verifica a populaçao dos cloretos nos quartis
+summary(baseVinho$chlorides)
+```
+
+
+```{r}
+
+#plota o histograma do cloreto
+ggplot(baseVinho, aes(chlorides)) +
+  geom_histogram(binwidth = 0.005) +
+  ggtitle('Histograma - Cloreto')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Cloreto') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 0.7, 0.05))
+
+
+```
+
+
+Encontra-se poucos valores próximo de 0 e poucos valores com valor maior que 0.2.
+Plotamos a base utilizando a transformação log10.
+Como a frequencia está concentrada nos valores menor que 0.1, tentamos "linearizar" utilizando uma escala logaritimica
+
+```{r}
+#plota histograma do cloreto utilizando transformação log10
+ggplot(baseVinho, aes(chlorides)) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10(breaks=seq(0, 1, 0.02)) +
+  ggtitle('Histograma - Cloreto')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Cloreto - Log10') +
+  ylab('Frequencia')
+
+
+```
+
+
+
+Após transformação verificamos que o histograma forma um formato de sino (paramétrica).
+
+### Dióxido de enxofre Livre - Free Sulfur dioxide
+
+Previne aumento na reprodução das microbacterias e da oxidação do vinho
+
+```{r}
+# população do dioxido de enxofre livre nos quartis
+summary(baseVinho$free.sulfur.dioxide)
+```
+
+
+```{r}
+#plota o histograma de dioxido de enxofre
+ggplot(baseVinho, aes(free.sulfur.dioxide)) +
+  geom_histogram(binwidth = 1) +
+  ggtitle('Histograma - Dioxido de Enxofre')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre') +
+  ylab('Frequencia') +
+ scale_x_continuous(breaks=seq(0, 80, 5))
+
+```
+
+Verifica-se uma grande concentração com valores abaixo de 20.
+
+Tentaremos aplicar a transformação log10 com o intuito de normalizar a variavel.
+
+```{r}
+#plota o histograma de dioxido de enxofre com transformação logaritimica
+ggplot(baseVinho, aes(free.sulfur.dioxide)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_log10(breaks=seq(0, 100, 1)) +
+  ggtitle('Histograma - Dioxido de Enxofre')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre - Log10') +
+  ylab('Frequencia')
+```
+
+Verifica-se que a transformação não formou um "sino" tendo 2 picos e um "buraco" nos valores proximos
+
+Tentaremos a transformação sqrt para normalizar a variavel.
+```{r}
+#plota o histograma do dioxido de enxofre utilizando a transformação sqrt
+ggplot(baseVinho, aes(free.sulfur.dioxide)) +
+  geom_histogram(binwidth = 0.5) +
+  ggtitle('Histograma - Dioxido de Enxofre')+
+  scale_x_sqrt(breaks=seq(0, 80, 5)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre') +
+  ylab('Frequencia')
+```
+
+Mesmo com as 2 transformaçoes, verificamos que não houve sucesso em "normalizar" essa variável. O formato de sino ficou desproporcional no lado direito, não ficando simétrico.
+
+### Dióxido de enxofre total - Total sulfur dioxide
+Imperceptível em baixas concentrações, mas concentrações elevadas fica evidente no cheiro e no sabor do vinho
+
+```{r}
+#população do dioxido de enxofre total nos quartis
+summary(baseVinho$total.sulfur.dioxide)
+```
+
+```{r}
+#plota histograma do dioxido de enxofre total
+ggplot(baseVinho, aes(total.sulfur.dioxide)) +
+  geom_histogram(binwidth = 1) +
+  ggtitle('Histograma - Dioxido de Enxofre Total')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre Total') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 300, 10))
+
+
+```
+
+Verifica-se concentração até o valor 100 com outliers com valores de 280 a 300.
+
+
+Em escala logaritimica
+```{r}
+
+#plota o histograma do dioxido de enxofre em escala log10
+ggplot(baseVinho, aes(total.sulfur.dioxide)) +
+  geom_histogram(binwidth = 0.05) +
+  scale_x_log10(breaks=seq(0, 150, 10)) +
+  ggtitle('Histograma - Dioxido de Enxofre')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre - Log10') +
+  ylab('Frequencia')
+```
+
+Verfica-se dois picos na regial central, sem simetria para o sino.
+Verificamos agora a transformação sqrt.
+
+```{r}
+#plota histograma de dioxido de enxofre na escala sqrt
+ggplot(baseVinho, aes(total.sulfur.dioxide)) +
+  geom_histogram(binwidth = 0.5) +
+  scale_x_sqrt(breaks=seq(0, 300, 10)) +
+  ggtitle('Histograma - Dioxido de Enxofre')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Dioxido de enxofre - sqrt') +
+  ylab('Frequencia')
+```
+
+
+Por visualização a tranformação em log10 torna-se mais adequada, porém não é visivel a normalização dessa variavel, ou seja, um histograma em formato de sino, simetrico no meio.
+
+### Densidade
+Densidade do vinho é aproximadamente a mesma densidade da água. A distorção da-se-à pela quantidade de alcool e açucar no vinho
+```{r}
+#população dos quartis da densidade
+summary(baseVinho$density)
+```
+```{r}
+# plota o histograma da densidade
+ggplot(baseVinho, aes(density)) +
+  geom_histogram(binwidth = 0.0001) +
+  ggtitle('Histograma - Densidade')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Densidade') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 1.1, 0.001))
+
+```
+
+Densidade bem distribuida, sem necessidade de transformações.
+
+### pH
+Verifica a aciddes do vinho numa escala de 0 a 14. (0 muito ácido - 14 muito básico)
+Maioria dos vinhos entre 3 e 4
+
+```{r}
+#população do ph nos quartis
+summary(baseVinho$pH)
+```
+```{r}
+#histograma do ph
+ggplot(baseVinho, aes(pH)) +
+  geom_histogram(binwidth = 0.01) +
+  ggtitle('Histograma - PH')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('PH') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 5, 0.1))
+```
+
+Observamos uma concentração com PH=3.3. 
+
+### Sulfato
+
+Aditivo que contribui na produção de SO2 (dioxido de enxofre) que atua com o antioxidante e anti-bactericida
+
+```{r}
+#população do sulfato nos quartis
+summary(baseVinho$sulphates)
+```
+
+```{r}
+#histograma do sulfato
+ggplot(baseVinho, aes(sulphates)) +
+  geom_histogram(binwidth = 0.01) +
+  ggtitle('Histograma - Sulfato')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Sulfato') +
+  ylab('Frequencia') +
+ scale_x_continuous(breaks=seq(0, 2, 0.1))
+
+
+
+
+```
+
+Observa-se uma concentração até o valor 0.9,1.0 com alguns outliers na faixa enre 1.9 e 2.0.
+
+Aplicando a transformação log10, tem-se:
+
+```{r}
+#histograma do sulfato, utilizando o transformação logaritimica
+ggplot(baseVinho, aes(sulphates)) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_log10(breaks=seq(0, 2, 0.1)) +
+  ggtitle('Histograma - Sulfato')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Sulfato - logaritimica') +
+  ylab('Frequencia') 
+
+
+  
+  
+```
+
+Novamente temos uma concentração entre 0.5 e 1.0 com outliers na casa dos 2.0.
+
+
+### Alcool
+% de alcool contida no vinho.
+
+```{r}
+#população do alcool nos quartis
+summary(baseVinho$alcohol)
+```
+
+
+```{r}
+#histograma do alcool
+ggplot(baseVinho, aes(alcohol)) +
+  geom_histogram(binwidth = 0.1) +
+  ggtitle('Histograma - Alcool')+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab('Alcool') +
+  ylab('Frequencia') +
+  scale_x_continuous(breaks=seq(0, 15, 0.5))
+```
+
+Encontramos valores distibuidos entre 9 e 13 com pico em 9.5 e alguns outros picos entre
+10, 10.5 e 11.
+
+
+## Análise Univariada
+
+### Qual a estrutura dos seus dados?
+População contém 1599 observações com 12 diferentes atributos. Uma é categórica (qualidade) e outras numericas que indicam as propriedades quimicas do vinho.
+
+### Quais as caracteristicas mais relevantes na sua população?
+A variavel dependente, qualidade.  As outras 11 variáveis são as independentes na quais posteriormente neste estudo queremos verificar se há alguma relação entre as variáveis independentes com a qualidade do vinho. 
+
+### Quais outras caracteristicas na base você acha que vai ajudar na investigação?
+Somente conseguiremos responder a esta pergunta depois de realizar os testes de correlação entre duas ou mais variáveis afetam a qualidade.
+
+### você criou novas variáveis na base?
+Sim. Classificamos melhor a qualidade com 3 categorias do vinho:
+notas: menor que 5  = "sangue de boi"
+notas: 5~7 = "bom pro dia a dia"
+notas: 7 pra cima = "excelente" 
+
+### Das variaveis que foram investigadas, houve alguma distribuição não-usual? Alguma operação  para ajustar os dados? se sim você fez?
+Açucar Residual foram utilizadas o quartil de 0.95.
+Cloreto foi utilizado o quartil 0.95 no meio.
+Dioxido de enxofre foi utilizado a transformação raiz quadrada
+Dioxido de enxofre total foi utilizado a transforação logaritimica de base 10.
+
+## Análise com duas variáveis
+
+INicialmente pode-se rodar o ggpairs para verificar algum relacionamento entre as variaveis dependentes com a independente de modo geral.Como a base possui poucas observações, não vi necessidade de utilizar uma amostra da população.
+
+```{r}
+#set.seed(69)
+
+#amostragem <- baseVinho[sample(1:length(baseVinho$quality), 100), ]
+
+# verifica a correlação e o grafico de dispersão de todas as variaveis,
+# confrontando-os um a um
+#ggpairs(baseVinho, 
+#        lower = list(continuous = wrap("points", shape = I('.'))), 
+#        upper = list(combo = wrap("box", outlier.shape = I('.'))))
+
+
+```
+Como a população possui 13 variaveis o resultado do ggpair não fica visivel neste tamanho.
+```{r}
+
+#verificamos o que é numerico e o que não é
+sapply (baseVinho, is.numeric)
+
+#retira-se a primeira coluna pois é apenas um contador
+baseVinho$x <- NULL
+
+#coloca-se apenas a base numerica na variavel baseVinhoNum
+baseVinhoNum <- baseVinho[, sapply(baseVinho, is.numeric)]
+
+
+# calcula tabela com as correlações.
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(cor(baseVinhoNum), method = "color", col = col(200),
+         type = "upper", order = "hclust", number.cex = .7,
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "black", tl.srt = 90, # Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag = FALSE)
+
+
+```
+
+
+
+Baseado nesta tabela, as maiores correlações com a qualidade do vinho se dá com o alcool (0.476), acidez volatil (-0.391), sulfato (0.251) o acido citrico (0.226).
+
+
+
+```{r}
+# correlação entre as variaveis com a qualidade
+c1 <- cor.test(baseVinho$fixed.acidity,
+               baseVinho$quality,
+               method='pearson')$estimate
+c2 <- cor.test(baseVinho$volatile.acidity,
+             baseVinho$quality,
+             method='pearson')$estimate
+c3 <- cor.test(baseVinho$citric.acid,
+             baseVinho$quality,
+             method='pearson')$estimate
+c4 <- cor.test(log10(baseVinho$residual.sugar),
+             baseVinho$quality,
+             method='pearson')$estimate
+c5 <- cor.test(baseVinho$residual.sugar,
+             baseVinho$quality,
+             method='pearson')$estimate
+c6 <- cor.test(log10(baseVinho$chlorides),
+             baseVinho$quality,
+             method='pearson')$estimate
+c7 <- cor.test(baseVinho$chlorides,
+             baseVinho$quality,
+             method='pearson')$estimate
+c8 <- cor.test(baseVinho$free.sulfur,
+             baseVinho$quality,
+             method='pearson')$estimate
+c9 <- cor.test(baseVinho$total.sulfur.dioxide,
+             baseVinho$quality,
+             method='pearson')$estimate
+c10 <- cor.test(baseVinho$density,
+              baseVinho$quality,
+              method='pearson')$estimate
+c11 <- cor.test(baseVinho$pH,
+              baseVinho$quality,
+              method='pearson')$estimate
+c12 <- cor.test(log10(baseVinho$sulphates),
+              baseVinho$quality,
+              method='pearson')$estimate
+c13 <- cor.test(baseVinho$sulphates,
+              baseVinho$quality,
+              method='pearson')$estimate
+c14 <- cor.test(baseVinho$alcohol,
+              baseVinho$quality,
+              method='pearson')$estimate
+#tabulação dos resultados
+tabela.corr <- c(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
+names(tabela.corr) <-c ('acidez fixa',
+                        'acidez volatil', 
+                        'acidez citrica', 
+                        'log ac.Res.',
+                        'ac.Res',
+                        'log Clor',
+                        'clor', 
+                        'diox.enx.liv', 
+                        'diox.enx.t', 
+                        'densidade', 
+                        'ph',
+                        'log sul.',
+                        'sulfato',
+                        'alcool')
+
+tabela.corr
+
+```
+
+Mesmo com as trasformações o aumento da correlação das transformações foram irrelevantes.
+Podemos concluir que um bom vinho tem correlação com as variaveis: alcool, acidez volátil, sulfato e acido citrico.
+
+Surpreendentemente, o PH não teve correlação com a Qualidade apesar de sabermos que o PH é  quimicamente e influenciado pela quantidade de acidez e acidos em uma substancia. Prova disso é que encontramos uma alta correlação entre PH e Acidez fixa (-0.68), PH e acido citrico (-0.54). 
+
+Vamos plotar os graficos para corroborar com essas afirmações de correlação.
+
+```{r}
+# plota relação entre alcool e qualidade
+ggplot(baseVinho, aes(x = alcohol, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 15, 1))
+```
+
+Verfica-se pela linha azul que na medida que há um aumento do alcool a qualidade também melhora com correlação igual a 0.48.
+```{r}
+
+
+# plotagem do qualidade x alcool separando por classificação
+ggplot(data = baseVinho) + 
+  geom_boxplot(aes(x = classificacao, 
+           y = alcohol)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Nivel de Alcool x Qualidade') +
+  xlab('Quality') +
+  ylab('Alcohol (% volume)')
+
+```
+
+Nota-se mais claramente pelo bloxpot que os vinhos de excelente qualidade possui maior quantidade de alcool (Mediana 11.6, media 11.5, q1 = 10.8, q3 = 12.2) como vemos na tabela a seguir.
+
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$alcohol | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+```{r}
+# plota relação entre acidez volatil e qualidade
+ggplot(baseVinho, aes(x = volatile.acidity, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 2, 0.1))
+```
+
+Verifica-se a reta decrescente entre qualidade e volatilidade acida com correlação igual a -0.39.
+
+```{r}
+# plotagem do qualidade x acidez volatil separando por classificação
+p2 <- ggplot(data = baseVinho) +
+  ylab('Acidez Volatil (g/dm^3)') + 
+  xlab('Qualidade') +
+  geom_boxplot( aes(x = classificacao, 
+               y = volatile.acidity)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Acidez Vol. x Qualidade')
+
+p2
+```
+
+Pelo grafico de bloxpot fica mais visivel que em geral, os vinhos excelentes possuem menos acidez volatil com mediana igual a 0.37 contra 0.68 e 0.54, media com 0.4 contra 0.7 e 0.5 de acordo com a tabela a seguir.
+
+```{r,fig.width = 200}
+# estatistica dos boxplox
+favstats(~baseVinho$volatile.acidity | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+
+```{r}
+#plota grafico sulfato x qualidade
+ggplot(baseVinho, aes(x = sulphates, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 2, 0.1))
+
+```
+
+
+
+Observa-se uma pequena inclinação da reta azul com o aumento da qualidade na medida que há um aumento no sulfato com correlação igual a 0.25.
+
+```{r}
+# plotagem do qualidade x acidez volatil separando por classificação
+p2 <- ggplot(data = baseVinho) +
+  ylab('Sulfato') + 
+  xlab('Qualidade') +
+  geom_boxplot( aes(x = classificacao, 
+               y = sulphates)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Acidez Vol. x Qualidade')
+p2
+```
+
+Ve-se que nos quartils de vinhos excelente eles em geral possuem mais sulfato(média de 0.74 contra 0.59 e 0.64), porém outiers de alta quantidade de sulfato com qualidade entre 5 e 7, como vemos na tabela a seguir.
+```{r, fig.width = 200}
+
+# estatistica dos boxplox
+favstats(~baseVinho$sulphates | baseVinho$classificacao, data = baseVinho)
+
+
+```
+
+
+
+```{r}
+# plota qualidade x acido citrico
+ggplot(baseVinho, aes(x = citric.acid, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 2, 0.1))
+```
+
+Verifica-se que na medida que a correlação cai, a reta azul é menos inclinada com correlação igual a 0.23.
+
+```{r}
+# plotagem do qualidade x acido citrico separando por classificação
+p2 <- ggplot(data = baseVinho) +
+  ylab('acido citrico (g/dm^3)') + 
+  xlab('Qualidade') +
+  geom_boxplot( aes(x = classificacao, 
+               y = citric.acid)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Acidez Vol. x Qualidade')
+p2
+```
+
+Nota-se pelos quartis que os vinhos excelentes possuem maior concentração de acido citrico com média igual a 0.37 contra 0.17 e 0.25 de acordo com a tabela abaixo.
+
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$citric.acid | baseVinho$classificacao, data = baseVinho)
+```
+
+
+Vamos verificar a correlação entre o ph e um acido.
+
+
+
+```{r}
+#plota ph x acidez fixa 
+ggplot(baseVinho, aes(x = fixed.acidity, y = pH)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 16, 1))
+```
+
+Verificamos  uma reta bem inclinada com os pontos concentrada e distribuida ao longo da reta. Encontramos correlação igual a 0.12.
+
+
+
+verificamos agora a relação entre qualidade e PH.
+
+```{r}
+#plota sulfato x qulaidade
+ggplot(baseVinho, aes(x = pH, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")+
+  scale_x_continuous(breaks=seq(0, 4, 0.1))
+```
+
+Verificamos a baixa e quase nula relação entre PH e Qualidade com valor igual a -0.06.
+
+## Analise multivariada
+
+Para a análise multivarida, pegamos as 4 variaveis que contem a correlação com a qualidade. 
+Para melhor visualização, utilizamos a classificação do vinho (sangue de boi, bom, excelente) ao inves de utilizar a nota de 3 a 8.
+
+Plota-se as quatro variaveis, 2 a 2, com a classificação como "wrap"
+
+
+```{r}
+# plotagem do sulfato x alcohol com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = log10(sulphates),
+           y = alcohol)) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+# plotagem do acidez volatil x alcohol com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = volatile.acidity,
+           y = alcohol)) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+# plotagem do acido citrico x alcool com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = citric.acid, 
+           y = alcohol)) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+# plotagem do acidez volatil x sulfato(log10) com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = volatile.acidity, 
+           y = log10(sulphates))) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+# plotagem do acido citrico x sulfato(log10) com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = citric.acid, 
+           y = log10(sulphates))) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+# plotagem do acido citrico x acidez voltail com wrap em classificaçao
+ggplot(data = baseVinho, 
+       aes(x = citric.acid,
+           y = volatile.acidity)) +
+  facet_wrap(~classificacao) +
+  geom_point()
+
+
+```
+
+Analisando as variaveis em dupla, a que melhor teve uma correlação visivel foi acidez volatil x acidez citrica.
+
+Neste caso, um alto valor de acido citrico (correlacao igual a 0.23) e baixo valor de acido volatil (correlação igual a -0.39) contribuem para a qualidade do vinho. Apesar dos acidos contribuirem diretamente com o PH de qualquer substancia, nesta base, o PH não influenciou na qualidade do vinho (não houve correlação -0.06).
+```{r}
+# plotagem do acidez volatil x alcool separando por classificação.
+# retiramos os sangue de bois da população
+ggplot(data = subset(baseVinho, 
+                     classificacao != 'sangue de boi'),
+       aes(x = volatile.acidity, 
+           y = alcohol,
+           color = classificacao)) +
+  geom_point(aes(x = volatile.acidity,
+                 y = alcohol,
+                 color = classificacao),
+                 alpha = 0.4) +
+  ggtitle('Alcool x Acido Volatil x Qualidade') +
+  xlab('Acidez Volatil (g / dm^3)') +
+  ylab('Alcool (% volume)')
+```
+
+Ao retirar os sangue de boi da amostragem temos uma relação entre acidez volatil alcool e Qualidade.
+Altas concentrações de alcool (correlação igual a 0.48) com baixa acidez volatil (correlação igual a -0.39) é uma formula para um excelente vinho.
+
+## Sumario
+
+
+Concluindo, temos o grafico da relação dos acidos com a qualidade do vinho.
+
+
+               
+```{r}
+# plotagem do qualidade x acidez fixa separando por classificação
+p1 <- ggplot(data = baseVinho) +
+  ylab('Acidez fixa (g/dm^3)') +
+  xlab('Qualidade') +
+  geom_boxplot(aes(x = classificacao, 
+               y = fixed.acidity)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Acidez fixa x Qualidade')
+
+# plotagem do qualidade x acidez volatil separando por classificação
+p2 <- ggplot(data = baseVinho) +
+  ylab('Acidez Volatil (g/dm^3)') + 
+  xlab('Qualidade') +
+  geom_boxplot( aes(x = classificacao, 
+               y = volatile.acidity)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Acidez Vol. x Qualidade')
+
+# plotagem do qualidade x acidez citrica separando por classificação
+p3 <- ggplot(data = baseVinho) +
+  ylab('Acido Citrico (g/dm^3)') +
+  xlab('Qualidade') +
+  geom_boxplot(aes(x = classificacao, 
+               y = citric.acid)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('A. Citrico. x Qualidade')
+
+# plotagem do qualidade x PH separando por classificação
+p4 <- ggplot(data = baseVinho) +
+  ylab('pH') +
+  xlab('Quality') +
+  geom_boxplot(aes(x = classificacao, y = pH)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('pH x Qualidade')
+
+p1
+#grid.arrange(p1, p2, p3, p4)
+
+```
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$fixed.acidity | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+```{r}
+p2
+```
+
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$volatile.acidity | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+
+```{r}
+p3
+```
+
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$citric.acid | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+```{r}
+
+p4
+```
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$pH | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+
+ESses graficos mostram o efeito dos acidos na qualidade do vinho.
+Verificamos que os vinhos excelentes possuem maior acidez fixa (media = 8.84), apesar de ter alguns outliers do sangue de boi e do bom vinho com acidez fixa próxima dos excelentes.
+A maior presença de acido volatil torna o vinho mais próximo ao sangue de boi (correlação -0.39). Acido Citrico tem uma boa correlação positiva com a qualidade (0.23).
+Quanto menor o PH mais acido é o vinho, nota-se pelo boxplot que os "sangue de boi" possui um maior PH, porem com uma correlação muito baixa (-0.06), como vimos na analise univariada.
+
+
+### Correlação do Alcool com qualidade do vinho
+
+Já era de se imaginar que o alcool faz toda a diferença em um vinho.
+É a variável que contem a maior correlação com a qualidade do vinho.
+
+```{r}
+# plotagem do qualidade x alcool separando por classificação
+ggplot(data = baseVinho) + 
+  geom_boxplot(aes(x = classificacao, 
+           y = alcohol)) +
+  scale_x_discrete(labels = c("sangue de boi" = "Sangue de Boi (nota < 5)",
+                                        "bom" = "Bom (nota entre 5 e 7)",
+                                  "excelente" = "Excelente (nota > 7)")) +
+  ggtitle('Nivel de Alcool x Qualidade') +
+  xlab('Quality') +
+  ylab('Alcohol (% volume)')
+
+```
+
+```{r}
+# estatistica dos boxplox
+favstats(~baseVinho$alcohol | baseVinho$classificacao, data = baseVinho)
+
+```
+
+
+Apesar do gráfico mostrar que os vinhos com classificação "excelente" possuem maior concentração de alcool (média = 11.51), verificando o intervalo da amostra e os outliers de cada categoria, mostra-se que o alcool por si só nao qualifica o vinho como de boa qualidade.
+
+
+### E o que realmente importa, para se ter um excelente vinho?
+
+```{r}
+# plotagem do acidez volatil x alcool separando por classificação.
+# retiramos os sangue de bois da população
+ggplot(data = subset(baseVinho, 
+                     classificacao != 'sangue de boi'),
+       aes(x = volatile.acidity, 
+           y = alcohol,
+           color = classificacao)) +
+  geom_point(aes(x = volatile.acidity,
+                 y = alcohol,
+                 color = classificacao),
+                 alpha = 0.4) +
+  ggtitle('Alcool x Acido Volatil x Qualidade') +
+  xlab('Acidez Volatil (g / dm^3)') +
+  ylab('Alcool (% volume)')
+```
+
+Tiramos do grafico os vinhos classificados como "sangue de boi" (notas menores que 5). Os testes de correlação de Pearson mostram que a qualidade do vinho é influenciada pela quantidade de alcool(cor = ) e pela acidez volatil contida na bebida. Aparentemente, baixa acidez volatil e alto nivel de alcool corresponde por um bom vinho na população deste estudo.
+
+
+## Conclusão
+
+  Após esta análise exploratórias dos dados destes vinhos, identificamos as principais caracteristicas quimicas que determina a qualidade do vinho desta amostragem. Das principais correlações podemos citar: alcool, sulfato e a acidez. Uma das limitações desta análise, destaca-se a nota da qualidade, uma vez que foi feita por método subjetivo dos diferentes avaliadores que compoe a população. 
+  As dificuldades do estudo foi analisar via gráfico se a variavel é normal ou não. Devia-se utilizar testes como o Kolmogorov-Smirnoff para verificar o quao normal é a variável.
+  Outra dificuldade, é até quando um valor de correlação realmente influencia na qualidade de um vinho. Talvez o número de outliers se deve à forma subjetiva de análise da qualidade do vinho. 
+  O sucesso do estudo foi saber identificar rapidamente as correlações entre as variaveis e as possiveis correlações que elas podem ter com a qualidade do vinho.
+
+  O que realmente supreendeu, foi a acidez ter correlação alta e o PH não ter nenhuma correlação (cor = -0.06) com a qualidade do vinho, uma vez que quimicamente, o PH é diretamente influenciado pelos acidos contidos em uma amostra.
+  Para uma melhoria no futuro, recomenda-se comparar difentes marcas de vinho, para que certificar que os compontes quimicos encontrados neste estudo realmente influencia na qualidade dos vinhos em geral.
